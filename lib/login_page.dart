@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -243,30 +244,24 @@ class _LoginPageState extends State<LoginPage> {
                 },
               ),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
               
-              const Text(
-                'Welcome to ProximiCast',
+              Text(
+                'Attendance?\nNow at your Fingertips!',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.lora(
                   fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w300,
                   color: Colors.black87,
+                  height: 1.0,
                 ),
               ),
               
               const SizedBox(height: 12),
               
-              const Text(
-                'Sign in with your institutional Google account',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
-              ),
               
-              const SizedBox(height: 48),
+              
+              const SizedBox(height: 30),
 
               // Google Login Button
               ElevatedButton.icon(
@@ -296,8 +291,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.purple,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -305,11 +300,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
 
               // Remember Me Checkbox
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Checkbox(
                     value: _rememberMe,
@@ -336,19 +331,19 @@ class _LoginPageState extends State<LoginPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  border: Border.all(color: Colors.purple.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                    Icon(Icons.info_outline, color: Colors.purple[700], size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Only $allowedDomain email addresses are allowed',
+                        'Note: Only $allowedDomain email addresses are allowed',
                         style: TextStyle(
-                          color: Colors.blue[700],
+                          color: Colors.purple[700],
                           fontSize: 14,
                         ),
                       ),
