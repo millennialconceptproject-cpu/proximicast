@@ -7,11 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 // Import your pages
 import 'landing_page.dart';
 import 'login_page.dart';
-import 'interruptscreen.dart';
-import 'dashboard.dart'; // This will now use your dashboard.dart file
+import 'dashboard.dart';
 import 'services/authservice.dart';
-import 'user_onboarding_container.dart'; // Import the new onboarding flow
-import 'user_service.dart'; // Import the user service
+import 'user_onboarding_container.dart';
+import 'user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,8 +40,7 @@ class ProximicastApp extends StatelessWidget {
       routes: {
         '/landing': (context) => const LandingPage(),
         '/login': (context) => const LoginPage(),
-        '/interrupt_screen': (context) => const InterruptScreen(),
-        '/onboarding': (context) => const UserOnboardingContainer(), // Add onboarding route
+        '/onboarding': (context) => const UserOnboardingContainer(),
         '/dashboard': (context) => const Dashboard(),
       },
       debugShowCheckedModeBanner: false,
@@ -101,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
     // Wait for animation to complete and minimum splash duration
     await Future.wait([
       _animationController.forward(),
-      Future.delayed(const Duration(seconds: 2)), // Reduced to 2 seconds for better UX
+      Future.delayed(const Duration(seconds: 2)),
     ]);
 
     if (!mounted) return;
@@ -116,14 +114,15 @@ class _SplashScreenState extends State<SplashScreen>
         User? currentUser = FirebaseAuth.instance.currentUser;
         
         if (currentUser != null) {
-          // Add this refresh check
-  await currentUser.reload();
-  currentUser = FirebaseAuth.instance.currentUser;
+          // Refresh user data
+          await currentUser.reload();
+          currentUser = FirebaseAuth.instance.currentUser;
 
-  if (currentUser == null) {
-    _navigateToLanding();
-    return;
-  }
+          if (currentUser == null) {
+            _navigateToLanding();
+            return;
+          }
+
           // Check if user has remember me enabled
           SharedPreferences prefs = await SharedPreferences.getInstance();
           bool rememberMe = prefs.getBool('remember_me_${currentUser.uid}') ?? false;
@@ -138,14 +137,10 @@ class _SplashScreenState extends State<SplashScreen>
           
           _updateStatus('Checking account setup...');
           
-          // Check user completion status using the new UserService
-          bool hasCompletedPasswordSetup = await UserService.hasCompletedPasswordSetup(currentUser.uid);
+          // Check if user has completed onboarding
           bool hasCompletedOnboarding = await UserService.hasCompletedOnboarding(currentUser.uid);
           
-          if (!hasCompletedPasswordSetup) {
-            _updateStatus('Setting up account security...');
-            _navigateToInterruptScreen();
-          } else if (!hasCompletedOnboarding) {
+          if (!hasCompletedOnboarding) {
             _updateStatus('Completing account setup...');
             _navigateToOnboarding();
           } else {
@@ -191,19 +186,6 @@ class _SplashScreenState extends State<SplashScreen>
             position: animation.drive(tween),
             child: child,
           );
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
-  }
-
-  void _navigateToInterruptScreen() {
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const InterruptScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 500),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 
 // Data models for storing user information
 class PersonalInfo {
@@ -495,12 +496,17 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Contact Number
+                    // Contact Number (11 digits starting with 09)
                     TextFormField(
                       controller: _contactController,
-                      keyboardType: TextInputType.phone,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(11),
+                      ],
                       decoration: InputDecoration(
                         labelText: 'Contact Number *',
+                        hintText: '09XXXXXXXXX',
                         prefixIcon: const Icon(Icons.phone),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -514,11 +520,17 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                         if (value == null || value.trim().isEmpty) {
                           return 'Contact number is required';
                         }
-                        // Basic Philippine mobile number validation
+                        
                         String cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
-                        if (cleaned.length < 10 || cleaned.length > 13) {
-                          return 'Please enter a valid contact number';
+                        
+                        if (cleaned.length != 11) {
+                          return 'Contact number must be exactly 11 digits';
                         }
+                        
+                        if (!cleaned.startsWith('09')) {
+                          return 'Contact number must start with 09';
+                        }
+                        
                         return null;
                       },
                       onSaved: (value) => widget.personalInfo.contactNumber = value?.trim() ?? '',
@@ -551,28 +563,37 @@ class AcademicInfoScreen extends StatefulWidget {
 
 class _AcademicInfoScreenState extends State<AcademicInfoScreen> {
   final TextEditingController _idNumberController = TextEditingController();
-  final TextEditingController _programController = TextEditingController();
-  final TextEditingController _yearController = TextEditingController();
-  final TextEditingController _blockController = TextEditingController();
+
+  final List<String> _programs = [
+    'Bachelor of Elementary Education',
+    'Bachelor of Secondary Education - Eng',
+    'Bachelor of Secondary Education - Math',
+    'BS Fisheries',
+    'BS Computer Science',
+    'BIndTech - Electrical Technologies',
+    'BIndTech - Food Tech',
+    'BS Midwifery',
+  ];
 
   final List<String> _yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+  final List<String> _blocks = ['A', 'B'];
+
+  String? _selectedProgram;
   String? _selectedYear;
+  String? _selectedBlock;
 
   @override
   void initState() {
     super.initState();
     _idNumberController.text = widget.academicInfo.idNumber;
-    _programController.text = widget.academicInfo.program;
-    _blockController.text = widget.academicInfo.block;
+    _selectedProgram = widget.academicInfo.program.isNotEmpty ? widget.academicInfo.program : null;
     _selectedYear = widget.academicInfo.year.isNotEmpty ? widget.academicInfo.year : null;
+    _selectedBlock = widget.academicInfo.block.isNotEmpty ? widget.academicInfo.block : null;
   }
 
   @override
   void dispose() {
     _idNumberController.dispose();
-    _programController.dispose();
-    _yearController.dispose();
-    _blockController.dispose();
     super.dispose();
   }
 
@@ -627,11 +648,16 @@ class _AcademicInfoScreenState extends State<AcademicInfoScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // ID Number
+                    // ID Number (numeric only)
                     TextFormField(
                       controller: _idNumberController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                       decoration: InputDecoration(
                         labelText: 'Student ID Number *',
+                        hintText: 'Enter your student ID',
                         prefixIcon: const Icon(Icons.badge),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -654,9 +680,9 @@ class _AcademicInfoScreenState extends State<AcademicInfoScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Program
-                    TextFormField(
-                      controller: _programController,
+                    // Program (Dropdown)
+                    DropdownButtonFormField<String>(
+                      value: _selectedProgram,
                       decoration: InputDecoration(
                         labelText: 'Program/Course *',
                         prefixIcon: const Icon(Icons.book),
@@ -668,13 +694,29 @@ class _AcademicInfoScreenState extends State<AcademicInfoScreen> {
                           borderSide: const BorderSide(color: Colors.purple, width: 2),
                         ),
                       ),
+                      hint: const Text('Select your program'),
+                      items: _programs.map((String program) {
+                        return DropdownMenuItem<String>(
+                          value: program,
+                          child: Text(
+                            program,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedProgram = newValue;
+                        });
+                      },
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
+                        if (value == null || value.isEmpty) {
                           return 'Program is required';
                         }
                         return null;
                       },
-                      onSaved: (value) => widget.academicInfo.program = value?.trim() ?? '',
+                      onSaved: (value) => widget.academicInfo.program = value ?? '',
+                      isExpanded: true,
                     ),
                     const SizedBox(height: 16),
 
@@ -692,6 +734,7 @@ class _AcademicInfoScreenState extends State<AcademicInfoScreen> {
                           borderSide: const BorderSide(color: Colors.purple, width: 2),
                         ),
                       ),
+                      hint: const Text('Select your year level'),
                       items: _yearLevels.map((String year) {
                         return DropdownMenuItem<String>(
                           value: year,
@@ -713,9 +756,9 @@ class _AcademicInfoScreenState extends State<AcademicInfoScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Block
-                    TextFormField(
-                      controller: _blockController,
+                    // Block (Dropdown for A or B)
+                    DropdownButtonFormField<String>(
+                      value: _selectedBlock,
                       decoration: InputDecoration(
                         labelText: 'Block/Section *',
                         prefixIcon: const Icon(Icons.group),
@@ -727,13 +770,25 @@ class _AcademicInfoScreenState extends State<AcademicInfoScreen> {
                           borderSide: const BorderSide(color: Colors.purple, width: 2),
                         ),
                       ),
+                      hint: const Text('Select your block'),
+                      items: _blocks.map((String block) {
+                        return DropdownMenuItem<String>(
+                          value: block,
+                          child: Text('Block $block'),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedBlock = newValue;
+                        });
+                      },
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
+                        if (value == null || value.isEmpty) {
                           return 'Block/Section is required';
                         }
                         return null;
                       },
-                      onSaved: (value) => widget.academicInfo.block = value?.trim() ?? '',
+                      onSaved: (value) => widget.academicInfo.block = value ?? '',
                     ),
                   ],
                 ),
@@ -746,7 +801,7 @@ class _AcademicInfoScreenState extends State<AcademicInfoScreen> {
   }
 }
 
-// Simple completion screen (replaces the device info loading screen)
+// Simple completion screen
 class CompletionScreen extends StatefulWidget {
   final VoidCallback onComplete;
 
@@ -774,13 +829,15 @@ class _CompletionScreenState extends State<CompletionScreen>
 
     // Start the process after a short delay
     Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _statusText = 'Almost done...';
-      });
-      
-      Future.delayed(const Duration(seconds: 1), () {
-        widget.onComplete();
-      });
+      if (mounted) {
+        setState(() {
+          _statusText = 'Almost done...';
+        });
+        
+        Future.delayed(const Duration(seconds: 1), () {
+          widget.onComplete();
+        });
+      }
     });
   }
 
@@ -865,4 +922,4 @@ class _CompletionScreenState extends State<CompletionScreen>
       ),
     );
   }
-    }
+}

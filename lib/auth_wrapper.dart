@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'user_service.dart'; // Import the UserService we created
+import 'user_service.dart';
 
 class AuthWrapper extends StatelessWidget {
   final Widget loginScreen;
-  final Widget interruptScreen;
   final Widget onboardingScreen;
   final Widget dashboardScreen;
 
   const AuthWrapper({
     super.key,
     required this.loginScreen,
-    required this.interruptScreen,
     required this.onboardingScreen,
     required this.dashboardScreen,
   });
@@ -66,8 +64,6 @@ class AuthWrapper extends StatelessWidget {
 
             // Handle routing based on user status
             switch (routeSnapshot.data) {
-              case '/interrupt':
-                return interruptScreen;
               case '/onboarding':
                 return onboardingScreen;
               case '/dashboard':
