@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "884356188968",
+    "project_id": "proximicasat",
+    "storage_bucket": "proximicasat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:884356188968:android:344deb6230f5ad5f2d1e1d",
+        "android_client_info": {
+          "package_name": "com.example.proximicast"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "884356188968-llhiuqu1qoaq9gd6hmj38ktaa8hqoaep.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.proximicast",
+            "certificate_hash": "3fd253ec8e259f3e3cbacd5e7e7bbd501649e702"
+          }
+        },
+        {
+          "client_id": "884356188968-328d891fms75qkl3f96mc9l5ia2obrfi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_TlKmIuvVeLR4XigOxftMWgqeIG_XoxY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "884356188968-328d891fms75qkl3f96mc9l5ia2obrfi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
