@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_service.dart';
+import 'services/device_lock_service.dart'; // Import the device lock service
 import 'package:google_fonts/google_fonts.dart';
 
 class LoginPage extends StatefulWidget {
@@ -36,6 +37,16 @@ class _LoginPageState extends State<LoginPage> {
     try {
       User? currentUser = _auth.currentUser;
       if (currentUser != null) {
+        // Check device lock authorization first
+        bool isAuthorized = await DeviceLockService.isUserAuthorized(currentUser.uid);
+        if (!isAuthorized) {
+          print('User not authorized for this device, signing out');
+          await _auth.signOut();
+          await _googleSignIn.signOut();
+          _showDeviceLockDialog();
+          return;
+        }
+
         SharedPreferences prefs = await SharedPreferences.getInstance();
         bool rememberMe = prefs.getBool('remember_me_${currentUser.uid}') ?? false;
         
@@ -108,7 +119,18 @@ class _LoginPageState extends State<LoginPage> {
       final user = userCredential.user!;
       print("Google sign-in successful: ${user.email}");
 
-      // Handle successful login
+      // CHECK DEVICE LOCK AUTHORIZATION BEFORE PROCEEDING
+      bool isAuthorized = await DeviceLockService.isUserAuthorized(user.uid);
+      if (!isAuthorized) {
+        print('User not authorized for this device');
+        // Sign out the user immediately
+        await _auth.signOut();
+        await _googleSignIn.signOut();
+        _showDeviceLockDialog();
+        return;
+      }
+
+      // Handle successful login (device authorization passed)
       await _handleSuccessfulLogin(user, userCredential.additionalUserInfo?.isNewUser ?? false);
 
     } on FirebaseAuthException catch (e) {
@@ -206,6 +228,51 @@ class _LoginPageState extends State<LoginPage> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('OK'),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeviceLockDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.lock, color: Colors.red[700]),
+            const SizedBox(width: 8),
+            const Text('Device Locked'),
+          ],
+        ),
+        content: const Text(
+          'This device is already registered to another user account. Each device can only be used by one user for security purposes.\n\nIf you are the device owner and need to reset this restriction, please contact your administrator.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+          // Optional: Add a debug button for development (remove in production)
+          if (false) // Set to false in production
+            TextButton(
+              onPressed: () async {
+                await DeviceLockService.resetDeviceLock();
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Device lock reset for testing'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              },
+              child: Text(
+                'Reset (Debug)',
+                style: TextStyle(color: Colors.orange[700]),
+              ),
+            ),
         ],
       ),
     );
@@ -351,6 +418,42 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
+
+              /**
+              // Device lock status indicator (optional, for debugging)
+              const SizedBox(height: 16),
+              FutureBuilder<Map<String, dynamic>>(
+                future: DeviceLockService.getDeviceLockInfo(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data!['isLocked'] == true) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.security, color: Colors.blue[700], size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Device is secured',
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),**/
             ],
           ),
         ),
