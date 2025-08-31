@@ -10,7 +10,7 @@ import 'login_page.dart';
 import 'dashboard.dart';
 import 'services/authservice.dart';
 import 'user_onboarding_container.dart';
-import 'user_service.dart';
+import 'services/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -3,8 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'user_service.dart';
-import 'services/device_lock_service.dart'; // Import the device lock service
+import 'services/user_service.dart';
+import 'services/device_lock_service.dart';
+import 'services/database_service.dart'; // Import the SQLite service
 import 'package:google_fonts/google_fonts.dart';
 
 class LoginPage extends StatefulWidget {
@@ -57,6 +58,22 @@ class _LoginPageState extends State<LoginPage> {
           bool hasCompletedOnboarding = await UserService.hasCompletedOnboarding(currentUser.uid);
           
           if (hasCompletedOnboarding) {
+            // Check if user data exists in local database
+            bool userExistsLocally = await DatabaseService.userExists(currentUser.uid);
+            
+            if (!userExistsLocally) {
+              print('User data not found locally, fetching from Firestore...');
+              try {
+                await DatabaseService.fetchAndStoreUserFromFirestore(currentUser.uid);
+                print('User data fetched and stored locally');
+              } catch (e) {
+                print('Error fetching user data from Firestore: $e');
+                // Continue to dashboard anyway, user might need to re-onboard
+              }
+            } else {
+              print('User data found in local database');
+            }
+            
             // Update last sign in and go to dashboard
             await UserService.updateLastSignIn(currentUser.uid);
             Navigator.pushReplacementNamed(context, '/dashboard');
@@ -159,7 +176,30 @@ class _LoginPageState extends State<LoginPage> {
       bool hasCompletedOnboarding = await UserService.hasCompletedOnboarding(user.uid);
       
       if (hasCompletedOnboarding) {
-        print('User has completed onboarding, going to dashboard');
+        print('User has completed onboarding, checking local database...');
+        
+        // Check if user data exists in local database
+        bool userExistsLocally = await DatabaseService.userExists(user.uid);
+        
+        if (!userExistsLocally) {
+          print('User data not found locally, fetching from Firestore...');
+          try {
+            await DatabaseService.fetchAndStoreUserFromFirestore(user.uid);
+            print('User data fetched and stored locally');
+          } catch (e) {
+            print('Error fetching user data from Firestore: $e');
+            // Show error but continue to dashboard
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Unable to sync user data. Some features may be limited.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        } else {
+          print('User data found in local database');
+        }
+        
         // Update last sign in time
         await UserService.updateLastSignIn(user.uid);
         Navigator.pushReplacementNamed(context, '/dashboard');
@@ -326,8 +366,6 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 12),
               
-              
-              
               const SizedBox(height: 30),
 
               // Google Login Button
@@ -418,42 +456,6 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-
-              /**
-              // Device lock status indicator (optional, for debugging)
-              const SizedBox(height: 16),
-              FutureBuilder<Map<String, dynamic>>(
-                future: DeviceLockService.getDeviceLockInfo(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData && snapshot.data!['isLocked'] == true) {
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.security, color: Colors.blue[700], size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Device is secured',
-                              style: TextStyle(
-                                color: Colors.blue[700],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),**/
             ],
           ),
         ),

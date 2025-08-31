@@ -240,7 +240,7 @@ class Dashboard extends StatelessWidget {
             TextButton(
               onPressed: () {},
               child: const Text(
-                'View all steps',
+                'How to use',
                 style: TextStyle(
                   color: Colors.purple,
                   fontSize: 16,

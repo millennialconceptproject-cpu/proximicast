@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'services/device_lock_service.dart';
+import 'services/database_service.dart'; // Import the SQLite service
 
 // Data models for storing user information
 class PersonalInfo {
@@ -119,12 +121,20 @@ class _UserOnboardingContainerState extends State<UserOnboardingContainer> {
         throw Exception('No authenticated user found');
       }
 
+      // ENSURE DEVICE IS BOUND TO THIS USER BEFORE COMPLETING ONBOARDING
+      bool isAuthorized = await DeviceLockService.isUserAuthorized(currentUser.uid);
+      if (!isAuthorized) {
+        _showErrorDialog('Device authorization failed. Please try logging in again.');
+        return;
+      }
+
       // Prepare data for Firestore
       Map<String, dynamic> userData = {
         'personalInfo': _personalInfo.toMap(),
         'academicInfo': _academicInfo.toMap(),
         'onboardingComplete': true,
         'onboardingCompletedAt': FieldValue.serverTimestamp(),
+        'deviceBoundAt': FieldValue.serverTimestamp(), // Track when device was bound
       };
 
       // Update user document in Firestore
@@ -133,7 +143,30 @@ class _UserOnboardingContainerState extends State<UserOnboardingContainer> {
           .doc(currentUser.uid)
           .set(userData, SetOptions(merge: true));
 
-      print('User onboarding data saved successfully');
+      print('User onboarding data saved to Firestore successfully');
+
+      // Store user data in local SQLite database
+      try {
+        await DatabaseService.insertOrUpdateUser(
+          uid: currentUser.uid,
+          email: currentUser.email ?? '',
+          firstName: _personalInfo.firstName,
+          lastName: _personalInfo.lastName,
+          middleName: _personalInfo.middleName.isNotEmpty ? _personalInfo.middleName : null,
+          studentIdNumber: _academicInfo.idNumber,
+          program: _academicInfo.program,
+          year: _academicInfo.year,
+          block: _academicInfo.block,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+        );
+        print('User data saved to local database successfully');
+      } catch (e) {
+        print('Error saving to local database: $e');
+        // Don't block navigation if local storage fails
+      }
+
+      print('Device bound to user: ${currentUser.uid}');
 
       // Navigate to dashboard
       Navigator.pushReplacementNamed(context, '/dashboard');
@@ -831,11 +864,19 @@ class _CompletionScreenState extends State<CompletionScreen>
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() {
-          _statusText = 'Almost done...';
+          _statusText = 'Saving to local database...';
         });
         
         Future.delayed(const Duration(seconds: 1), () {
-          widget.onComplete();
+          if (mounted) {
+            setState(() {
+              _statusText = 'Almost done...';
+            });
+            
+            Future.delayed(const Duration(seconds: 1), () {
+              widget.onComplete();
+            });
+          }
         });
       }
     });
@@ -904,11 +945,11 @@ class _CompletionScreenState extends State<CompletionScreen>
             ),
             child: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+                Icon(Icons.storage, color: Colors.green[700], size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Setting up your account profile...',
+                    'Storing data locally for offline access...',
                     style: TextStyle(
                       color: Colors.green[700],
                       fontSize: 14,
