@@ -11,6 +11,7 @@ import 'dashboard.dart';
 import 'services/authservice.dart';
 import 'user_onboarding_container.dart';
 import 'services/user_service.dart';
+import 'services/initialization_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -194,27 +195,27 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _navigateToOnboarding() {
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const UserOnboardingContainer(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/onboarding',
+      (route) => false, // Remove all previous routes
     );
   }
 
-  void _navigateToDashboard() {
+  void _navigateToDashboard() async {
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const Dashboard(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
+    
+    try {
+      // Initialize event and location data when navigating to dashboard
+      _updateStatus('Loading activities...');
+      await InitializationService.initializeApp();
+    } catch (e) {
+      print('Error initializing data: $e');
+      // Continue to dashboard even if data sync fails
+    }
+    
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/dashboard',
+      (route) => false, // Remove all previous routes
     );
   }
 

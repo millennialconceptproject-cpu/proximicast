@@ -76,10 +76,18 @@ class _LoginPageState extends State<LoginPage> {
             
             // Update last sign in and go to dashboard
             await UserService.updateLastSignIn(currentUser.uid);
-            Navigator.pushReplacementNamed(context, '/dashboard');
+            Navigator.pushNamedAndRemoveUntil(
+              context, 
+              '/dashboard', 
+              (route) => false, // Remove all previous routes
+            );
           } else {
             // User needs to complete onboarding
-            Navigator.pushReplacementNamed(context, '/onboarding');
+            Navigator.pushNamedAndRemoveUntil(
+              context, 
+              '/onboarding', 
+              (route) => false, // Remove all previous routes
+            );
           }
         } else {
           print('Auto-login disabled, signing out user');
@@ -202,10 +210,18 @@ class _LoginPageState extends State<LoginPage> {
         
         // Update last sign in time
         await UserService.updateLastSignIn(user.uid);
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/dashboard', 
+          (route) => false, // Remove all previous routes
+        );
       } else {
         print('User needs to complete onboarding, going to onboarding screen');
-        Navigator.pushReplacementNamed(context, '/onboarding');
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/onboarding', 
+          (route) => false, // Remove all previous routes
+        );
       }
     } catch (e) {
       print('Error in handleSuccessfulLogin: $e');
@@ -415,7 +431,7 @@ class _LoginPageState extends State<LoginPage> {
                     value: _rememberMe,
                     onChanged: _isLoading ? null : (value) {
                       setState(() {
-                        _rememberMe = value ?? true;
+                        _rememberMe = value ?? false;
                       });
                     },
                     activeColor: Colors.purple,
